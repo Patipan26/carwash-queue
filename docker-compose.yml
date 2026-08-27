@@ -1,0 +1,70 @@
+services:
+  db:
+    image: mysql:8.4
+    container_name: carwash-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: carwash_queue
+      MYSQL_USER: carwash
+      MYSQL_PASSWORD: carwash_dev_password
+      MYSQL_ROOT_PASSWORD: carwash_root_password
+    ports:
+      - "${MYSQL_PORT:-3307}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build: ./server
+    container_name: carwash-api
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+      CLIENT_ORIGIN: http://localhost:${WEB_PORT:-5174}
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: carwash_queue
+      DB_USER: carwash
+      DB_PASSWORD: carwash_dev_password
+      DB_CHARSET: utf8mb4
+      JWT_SECRET: change-this-docker-secret
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${API_PORT:-3001}:3000"
+    volumes:
+      - uploads_data:/app/uploads
+
+  client:
+    build: ./client
+    container_name: carwash-client
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "${WEB_PORT:-5174}:80"
+
+  phpmyadmin:
+    image: phpmyadmin:5.2-apache
+    container_name: carwash-phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      UPLOAD_LIMIT: 64M
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${PHPMYADMIN_PORT:-18081}:80"
+
+volumes:
+  mysql_data:
+  uploads_data:

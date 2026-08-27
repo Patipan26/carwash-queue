@@ -1,0 +1,77 @@
+const express = require('express');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const pool = require('../db');
+
+const router = express.Router();
+
+function issueToken(user) {
+  return jwt.sign(
+    { id: user.id, email: user.email, role: user.role },
+    process.env.JWT_SECRET || 'development-secret',
+    { expiresIn: '7d' }
+  );
+}
+
+function setAuthCookie(res, user) {
+  res.cookie('token', issueToken(user), {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 7 * 24 * 60 * 60 * 1000
+  });
+}
+
+router.post('/register', async (req, res, next) => {
+  try {
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const password = String(req.body.password || '');
+    if (!email || password.length < 6) {
+      return res.status(400).json({ message: 'กรุณากรอกอีเมลและรหัสผ่านอย่างน้อย 6 ตัวอักษร' });
+    }
+
+    const [existing] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
+    if (existing.length) return res.status(409).json({ message: 'อีเมลนี้มีบัญชีแล้ว' });
+
+    const passwordHash = await bcrypt.hash(password, 12);
+    const [result] = await pool.query(
+      'INSERT INTO users (email, password_hash, name, phone) VALUES (?, ?, ?, ?)',
+      [email, passwordHash, req.body.name || null, req.body.phone || null]
+    );
+    const user = { id: result.insertId, email, role: 'customer' };
+    setAuthCookie(res, user);
+    res.status(201).json({ user });
+  } catch (error) { next(error); }
+});
+
+router.post('/login', async (req, res, next) => {
+  try {
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const password = String(req.body.password || '');
+    const [rows] = await pool.query('SELECT id, email, password_hash, name, phone, role FROM users WHERE email = ?', [email]);
+    const user = rows[0];
+    if (!user || !(await bcrypt.compare(password, user.password_hash))) {
+      return res.status(401).json({ message: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' });
+    }
+    setAuthCookie(res, user);
+    res.json({ user: { id: user.id, email: user.email, name: user.name, phone: user.phone, role: user.role } });
+  } catch (error) { next(error); }
+});
+
+router.post('/logout', (_req, res) => {
+  res.clearCookie('token');
+  res.json({ message: 'ออกจากระบบแล้ว' });
+});
+
+router.get('/me', (req, res) => {
+  const token = req.cookies?.token;
+  if (!token) return res.json({ user: null });
+  try {
+    const user = jwt.verify(token, process.env.JWT_SECRET || 'development-secret');
+    res.json({ user });
+  } catch {
+    res.json({ user: null });
+  }
+});
+
+module.exports = router;
