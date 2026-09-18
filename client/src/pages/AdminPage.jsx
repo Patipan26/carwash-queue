@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../api';
+import { Icon } from '../components/Icons';
+import { formatThaiDate, toDateInputValue } from '../utils/date';
 
 const statusLabels = {
   pending: 'รอดำเนินการ',
@@ -75,7 +77,7 @@ export default function AdminPage() {
   }
 
   const filteredBookings = useMemo(() => bookings.filter((item) => {
-    const bookingDate = String(item.bookingDate).slice(0, 10);
+    const bookingDate = toDateInputValue(item.bookingDate);
     return includesText(item, bookingFilter.search)
       && (bookingFilter.status === 'all' || item.status === bookingFilter.status)
       && (!bookingFilter.date || bookingDate === bookingFilter.date)
@@ -89,18 +91,19 @@ export default function AdminPage() {
   }), [contacts, contactFilter]);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-10">
+    <div className="mx-auto max-w-7xl px-5 py-12 md:py-16">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+          <p className="eyebrow">Operations</p>
+          <h1 className="mt-3 text-3xl font-bold tracking-tight text-[#0b1f3a] md:text-5xl">Admin Dashboard</h1>
           <p className="text-sm text-slate-500 mt-2">จัดการรายการจองและข้อความจากลูกค้า</p>
         </div>
-        <button onClick={load} className="border bg-white px-4 py-2 rounded-xl text-sm">รีเฟรช</button>
+        <button onClick={load} className="secondary-button !px-3 !py-2 text-sm"><Icon name="dashboard" size={16} />รีเฟรช</button>
       </div>
 
       {error && <p className="text-rose-600 mb-4">{error}</p>}
 
-      <div className="flex gap-2 border-b mb-6">
+      <div className="mb-6 flex gap-2 border-b border-slate-200">
         <button onClick={() => setTab('bookings')} className={`px-4 py-3 text-sm font-semibold ${tab === 'bookings' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-slate-500'}`}>
           รายการจอง ({filteredBookings.length}/{bookings.length})
         </button>
@@ -111,7 +114,7 @@ export default function AdminPage() {
 
       {tab === 'bookings' ? (
         <>
-          <div className="bg-white border rounded-2xl p-5 shadow-sm mb-6">
+          <div className="surface mb-6 rounded-xl p-5">
             <div className="grid md:grid-cols-4 gap-3">
               <input
                 value={bookingFilter.search}
@@ -135,7 +138,7 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border shadow-sm overflow-x-auto">
+          <div className="surface overflow-x-auto rounded-xl">
             <table className="w-full text-left text-sm">
               <thead className="bg-slate-50 border-b">
                 <tr><th className="p-4">วันเวลา</th><th className="p-4">ลูกค้า</th><th className="p-4">รถ</th><th className="p-4">บริการ</th><th className="p-4">ยอดรวม</th><th className="p-4">สถานะ</th></tr>
@@ -143,7 +146,7 @@ export default function AdminPage() {
               <tbody className="divide-y">
                 {filteredBookings.map((item) => (
                   <tr key={item.id}>
-                    <td className="p-4">{String(item.bookingDate).slice(0, 10)}<br /><span className="text-xs text-slate-400">{item.bookingTime}</span></td>
+                    <td className="p-4">{formatThaiDate(item.bookingDate, { withWeekday: true })}<br /><span className="text-xs text-slate-400">{item.bookingTime}</span></td>
                     <td className="p-4">{item.customerName}<br /><span className="text-xs text-slate-400">{item.customerPhone}</span></td>
                     <td className="p-4">{item.carPlate}<br /><span className="text-xs text-slate-400">{item.carModel}</span></td>
                     <td className="p-4 font-semibold">{item.service}<br /><span className="text-xs text-slate-500">{item.addons?.map((a) => `+ ${a.name}`).join(', ') || 'ไม่มีบริการเสริม'}</span></td>
@@ -164,7 +167,7 @@ export default function AdminPage() {
         </>
       ) : (
         <>
-          <div className="bg-white border rounded-2xl p-5 shadow-sm mb-6 flex flex-wrap gap-3">
+          <div className="surface mb-6 flex flex-wrap gap-3 rounded-xl p-5">
             <input value={contactFilter.search} onChange={(e) => setContactFilter({ ...contactFilter, search: e.target.value })} placeholder="ค้นหาผู้ส่ง หัวข้อ หรือข้อความ" className="border rounded-xl px-3 py-2 text-sm flex-1 min-w-64" />
             <select value={contactFilter.status} onChange={(e) => setContactFilter({ ...contactFilter, status: e.target.value })} className="border rounded-xl px-3 py-2 text-sm bg-white">
               <option value="all">ทุกสถานะข้อความ</option><option value="unread">ยังไม่อ่าน</option><option value="read">อ่านแล้ว</option><option value="archived">เก็บถาวร</option>
@@ -172,7 +175,7 @@ export default function AdminPage() {
             <button onClick={() => setContactFilter({ search: '', status: 'all' })} className="text-sm text-slate-500 hover:text-blue-600">ล้างตัวกรอง</button>
           </div>
 
-          <div className="bg-white rounded-2xl border shadow-sm overflow-x-auto">
+          <div className="surface overflow-x-auto rounded-xl">
             <table className="w-full text-left text-sm">
               <thead className="bg-slate-50 border-b"><tr><th className="p-4">ผู้ส่ง</th><th className="p-4">หัวข้อ</th><th className="p-4">ข้อความ</th><th className="p-4">ไฟล์แนบ</th><th className="p-4">จัดการ</th></tr></thead>
               <tbody className="divide-y">

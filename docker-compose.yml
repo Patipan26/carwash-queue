@@ -33,6 +33,7 @@ services:
       DB_USER: carwash
       DB_PASSWORD: carwash_dev_password
       DB_CHARSET: utf8mb4
+      BOOKING_SLOT_CAPACITY: ${BOOKING_SLOT_CAPACITY:-1}
       JWT_SECRET: change-this-docker-secret
     depends_on:
       db:

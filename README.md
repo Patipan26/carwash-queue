@@ -77,5 +77,21 @@ UPDATE users SET role = 'admin' WHERE email = 'admin@example.com';
 - Standard Wash: ฿250
 - Premium Wash: ฿450
 - Full Detailing: ฿1,200
+- ค่าเริ่มต้นจำกัด 1 คันต่อช่วงเวลา ปรับได้ด้วย `BOOKING_SLOT_CAPACITY`
 - สถานะการจอง: `pending`, `confirmed`, `completed`, `cancelled`
 - ไม่ใช้ Firebase และไม่ให้ React ติดต่อ MySQL โดยตรง
+
+## กฎการจอง
+
+- Backend รับเฉพาะช่วงเวลา 09:00–10:00, 10:00–11:00, 11:00–12:00, 13:00–14:00, 14:00–15:00 และ 15:00–16:00
+- ปฏิเสธวันที่ผ่านมาแล้ว โดยอ้างอิงเวลา Asia/Bangkok
+- นับเฉพาะรายการ `pending` และ `confirmed` เป็นคิวที่ใช้ความจุ ส่วน `cancelled` และ `completed` ไม่กินคิว
+- Backend อ่านราคาบริการและบริการเสริมจาก MySQL แล้วคำนวณยอดรวมเอง ไม่เชื่อราคาจากหน้าเว็บ
+- Endpoint `GET /api/bookings/availability?date=YYYY-MM-DD` ใช้ดูจำนวนคิวคงเหลือของแต่ละช่วงเวลา
+- ใช้ MySQL advisory lock ป้องกันคำขอสองรายการจองที่ว่างสุดท้ายพร้อมกัน
+
+หากใช้ฐานข้อมูลเดิม ให้รัน migration เพิ่ม index ครั้งเดียว:
+
+```powershell
+Get-Content '.\database\migrations\002_booking_slot_index.sql' | docker exec -i carwash-mysql mysql -ucarwash -pcarwash_dev_password carwash_queue
+```

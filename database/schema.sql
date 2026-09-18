@@ -57,7 +57,8 @@ CREATE TABLE IF NOT EXISTS bookings (
   CONSTRAINT fk_bookings_user FOREIGN KEY (user_id) REFERENCES users(id),
   CONSTRAINT fk_bookings_service FOREIGN KEY (service_id) REFERENCES services(id),
   INDEX idx_bookings_user_date (user_id, booking_date),
-  INDEX idx_bookings_status (status, booking_date)
+  INDEX idx_bookings_status (status, booking_date),
+  INDEX idx_bookings_slot_status (booking_date, booking_time, status)
 );
 
 CREATE TABLE IF NOT EXISTS booking_addons (

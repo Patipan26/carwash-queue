@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
+import { Icon } from '../components/Icons';
 
 export default function ServicesPage() {
   const [catalog, setCatalog] = useState({ services: [], addons: [] });
   const [error, setError] = useState('');
+
   useEffect(() => { api('/services').then(setCatalog).catch((err) => setError(err.message)); }, []);
-  return <div className="max-w-6xl mx-auto px-4 py-10 space-y-10">
-    <div><h1 className="text-3xl font-bold">บริการและอัตราค่าบริการ</h1><p className="text-sm text-slate-500 mt-2">เลือกแพ็กเกจที่เหมาะกับรถของคุณ</p></div>
-    {error && <p className="text-rose-600">{error}</p>}
-    <section className="grid md:grid-cols-3 gap-5">{catalog.services.map((service) => <div key={service.id} className="bg-white rounded-2xl border p-6 shadow-sm flex flex-col"><span className="text-xs font-bold text-blue-600 bg-blue-50 rounded-full px-3 py-1 self-start">แพ็กเกจบริการ</span><h2 className="text-xl font-bold mt-5">{service.name}</h2><p className="text-sm text-slate-500 mt-3 flex-1">{service.description}</p><p className="text-blue-600 text-2xl font-bold mt-6">฿{Number(service.price).toLocaleString()}</p><Link to={`/booking?service=${encodeURIComponent(service.name)}`} className="mt-5 text-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl text-sm">จองบริการนี้</Link></div>)}</section>
-    <section><h2 className="text-xl font-bold">บริการเสริม</h2><div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-5">{catalog.addons.map((addon) => <div key={addon.id} className="bg-white rounded-2xl border p-5"><div className="text-2xl">✨</div><h3 className="font-bold mt-3">{addon.name}</h3><p className="text-xs text-slate-500 mt-2">{addon.description}</p><p className="text-blue-600 font-bold mt-4">฿{Number(addon.price).toLocaleString()}</p></div>)}</div></section>
+
+  return <div className="mx-auto max-w-7xl px-5 py-12 md:py-16">
+    <div className="flex flex-col justify-between gap-5 border-b border-slate-200 pb-8 md:flex-row md:items-end"><div><p className="eyebrow">Our services</p><h1 className="mt-3 text-3xl font-bold tracking-tight text-[#0b1f3a] md:text-5xl">บริการและอัตราค่าบริการ</h1><p className="mt-3 max-w-xl text-slate-500">เลือกบริการที่เหมาะกับสภาพรถของคุณ แล้วจองช่วงเวลาที่สะดวกได้ทันที</p></div><div className="flex items-center gap-2 text-xs text-slate-500"><span className="h-2 w-2 rounded-full bg-emerald-500" />เปิดรับจองทุกวัน 09:00 - 16:00 น.</div></div>
+    {error && <p className="mt-6 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
+    <section className="mt-10 grid gap-5 md:grid-cols-3">{catalog.services.map((service, index) => <div key={service.id} className="surface group flex flex-col rounded-xl p-6 transition hover:-translate-y-1 hover:shadow-[0_22px_48px_-28px_rgba(37,99,235,0.55)] md:p-7"><span className="text-sm font-bold text-blue-600">0{index + 1}</span><h2 className="mt-9 text-2xl font-bold tracking-tight text-[#0b1f3a]">{service.name}</h2><p className="mt-3 min-h-12 flex-1 text-sm leading-6 text-slate-500">{service.description}</p><div className="mt-8 flex items-end justify-between border-t border-slate-100 pt-5"><div><p className="text-[11px] uppercase tracking-wider text-slate-400">เริ่มต้นที่</p><p className="mt-1 text-2xl font-bold text-blue-600">฿{Number(service.price).toLocaleString()}</p></div><Link to={`/booking?service=${encodeURIComponent(service.name)}`} className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#0b1f3a] text-white hover:bg-blue-600" aria-label={`จอง ${service.name}`}><Icon name="arrow" size={18} /></Link></div></div>)}</section>
+    <section className="mt-16"><div className="flex items-end justify-between border-b border-slate-200 pb-4"><div><p className="eyebrow">Add-ons</p><h2 className="mt-2 text-2xl font-bold text-[#0b1f3a]">บริการเสริม</h2></div><span className="hidden text-sm text-slate-400 md:block">เพิ่มรายละเอียดให้รถของคุณ</span></div><div className="mt-5 grid gap-px overflow-hidden rounded-xl border border-slate-200 bg-slate-200 sm:grid-cols-2 lg:grid-cols-4">{catalog.addons.map((addon, index) => <div key={addon.id} className="bg-white p-5"><span className="text-xs font-bold text-slate-400">A{String(index + 1).padStart(2, '0')}</span><h3 className="mt-7 font-bold text-[#0b1f3a]">{addon.name}</h3><p className="mt-2 min-h-10 text-xs leading-5 text-slate-500">{addon.description}</p><p className="mt-5 font-bold text-blue-600">฿{Number(addon.price).toLocaleString()}</p></div>)}</div></section>
   </div>;
 }
